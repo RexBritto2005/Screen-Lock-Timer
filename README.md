@@ -1,33 +1,81 @@
-# Screen Locker Application
+# 🔒 Screen Locker
 
-A simple Windows application that locks your screen after a specified time period.
+A minimal, sleek Windows application that automatically locks your screen after a specified time.
 
-## Features
+## ✨ Features
 
-- Set custom timer in minutes
-- Visual countdown display
-- Start/Stop timer controls
-- Automatically locks Windows screen when timer expires
+- **Pure Dark Theme** - Minimal black UI design
+- **Two-Digit Time Format** - Professional HH:MM:SS display
+- **Background Process** - Timer continues even after closing the window
+- **Detached Execution** - Runs independently from the main application
+- **Compact Design** - Small, efficient interface (380x280)
 
-## Requirements
+## 📦 Installation
 
-- Python 3.x
-- tkinter (usually included with Python)
+Install required packages:
+```bash
+pip install -r requirements.txt
+```
+
+Or use the batch file:
+```bash
+install.bat
+```
+
+## 🚀 Usage
+
+Run the application:
+```bash
+python run.py
+```
+
+## 🎨 Design
+
+- **Pure Black Background** - True dark theme (#0a0a0a)
+- **Minimal Interface** - No unnecessary elements
+- **CustomTkinter** - Modern, native-looking widgets
+- **Compact Layout** - Efficient use of space
+- **Two-Digit Inputs** - Auto-formatting time fields
+
+## 📁 Project Structure
+
+```
+ScreenLock/
+├── src/
+│   └── screen_locker_modern.py  # Main application
+├── lock_timer.py                # Background timer process
+├── run.py                       # Application launcher
+├── install.bat                  # Windows installer
+├── requirements.txt             # Dependencies
+└── README.md                    # Documentation
+```
+
+## 🔧 How It Works
+
+1. Set hours, minutes, and seconds (two-digit format)
+2. Click "Start" to begin the timer
+3. A detached background process is created
+4. Close the window anytime - timer keeps running
+5. Screen locks automatically when time expires
+
+## 💡 Technical Details
+
+- Uses Windows API (`LockWorkStation`) for screen locking
+- Detached subprocess ensures timer survives app closure
+- CustomTkinter provides modern UI components
+- Auto-formatting inputs to two-digit format
+- Input validation and error handling
+
+## 🎯 Requirements
+
+- Python 3.7+
 - Windows OS
+- customtkinter 5.2.1+
+- Pillow 10.1.0+
 
-## Usage
+## 📝 Notes
 
-1. Run the application:
-   ```
-   python screen_locker.py
-   ```
-
-2. Enter the number of minutes before the screen should lock
-
-3. Click "Start Timer" to begin the countdown
-
-4. Click "Stop Timer" to cancel the lock
-
-## How It Works
-
-The application uses Windows API (`LockWorkStation`) to lock the screen when the timer expires. The countdown runs in a separate thread to keep the UI responsive.
+- Timer runs independently in the background
+- Safe to close the main window after starting
+- Screen locks even if application is closed
+- Fully detached operation
