@@ -1,19 +1,15 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-import ctypes
-import threading
-import time
+import subprocess
+import sys
+import os
 
 class ScreenLockerApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Screen Locker")
-        self.root.geometry("350x200")
+        self.root.geometry("400x220")
         self.root.resizable(False, False)
-        
-        self.timer_thread = None
-        self.is_running = False
-        self.remaining_time = 0
         
         self.setup_ui()
     
@@ -26,13 +22,25 @@ class ScreenLockerApp:
         input_frame = tk.Frame(self.root)
         input_frame.pack(pady=10)
         
-        tk.Label(input_frame, text="Lock screen after:", font=("Arial", 10)).grid(row=0, column=0, padx=5)
+        tk.Label(input_frame, text="Lock screen after:", font=("Arial", 10)).grid(row=0, column=0, columnspan=6, pady=5)
         
-        self.time_entry = tk.Entry(input_frame, width=10, font=("Arial", 10))
-        self.time_entry.insert(0, "5")
-        self.time_entry.grid(row=0, column=1, padx=5)
+        # Hours
+        tk.Label(input_frame, text="Hours:", font=("Arial", 9)).grid(row=1, column=0, padx=2)
+        self.hours_entry = tk.Entry(input_frame, width=5, font=("Arial", 10))
+        self.hours_entry.insert(0, "0")
+        self.hours_entry.grid(row=1, column=1, padx=2)
         
-        tk.Label(input_frame, text="minutes", font=("Arial", 10)).grid(row=0, column=2, padx=5)
+        # Minutes
+        tk.Label(input_frame, text="Minutes:", font=("Arial", 9)).grid(row=1, column=2, padx=2)
+        self.minutes_entry = tk.Entry(input_frame, width=5, font=("Arial", 10))
+        self.minutes_entry.insert(0, "5")
+        self.minutes_entry.grid(row=1, column=3, padx=2)
+        
+        # Seconds
+        tk.Label(input_frame, text="Seconds:", font=("Arial", 9)).grid(row=1, column=4, padx=2)
+        self.seconds_entry = tk.Entry(input_frame, width=5, font=("Arial", 10))
+        self.seconds_entry.insert(0, "0")
+        self.seconds_entry.grid(row=1, column=5, padx=2)
         
         # Status label
         self.status_label = tk.Label(self.root, text="Timer not started", font=("Arial", 10), fg="gray")
@@ -45,58 +53,45 @@ class ScreenLockerApp:
         self.start_button = tk.Button(button_frame, text="Start Timer", command=self.start_timer, 
                                        bg="#4CAF50", fg="white", font=("Arial", 10, "bold"), 
                                        width=12, cursor="hand2")
-        self.start_button.grid(row=0, column=0, padx=5)
-        
-        self.stop_button = tk.Button(button_frame, text="Stop Timer", command=self.stop_timer, 
-                                      bg="#f44336", fg="white", font=("Arial", 10, "bold"), 
-                                      width=12, cursor="hand2", state=tk.DISABLED)
-        self.stop_button.grid(row=0, column=1, padx=5)
+        self.start_button.pack()
     
     def start_timer(self):
         try:
-            minutes = float(self.time_entry.get())
-            if minutes <= 0:
-                messagebox.showerror("Invalid Input", "Please enter a positive number")
+            hours = int(self.hours_entry.get() or 0)
+            minutes = int(self.minutes_entry.get() or 0)
+            seconds = int(self.seconds_entry.get() or 0)
+            
+            if hours < 0 or minutes < 0 or seconds < 0:
+                messagebox.showerror("Invalid Input", "Please enter positive numbers")
                 return
             
-            self.remaining_time = int(minutes * 60)
-            self.is_running = True
+            total_seconds = hours * 3600 + minutes * 60 + seconds
             
-            self.start_button.config(state=tk.DISABLED)
-            self.stop_button.config(state=tk.NORMAL)
-            self.time_entry.config(state=tk.DISABLED)
+            if total_seconds == 0:
+                messagebox.showerror("Invalid Input", "Please enter a time greater than 0")
+                return
             
-            self.timer_thread = threading.Thread(target=self.countdown, daemon=True)
-            self.timer_thread.start()
+            # Get the path to lock_timer.py
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            lock_timer_path = os.path.join(script_dir, "lock_timer.py")
+            
+            # Start detached process
+            DETACHED_PROCESS = 0x00000008
+            subprocess.Popen(
+                [sys.executable, lock_timer_path, str(total_seconds)],
+                creationflags=DETACHED_PROCESS,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                stdin=subprocess.DEVNULL
+            )
+            
+            self.status_label.config(text=f"Timer started! Screen will lock in {hours:02d}:{minutes:02d}:{seconds:02d}", fg="green")
+            messagebox.showinfo("Timer Started", f"Screen will lock in {hours:02d}:{minutes:02d}:{seconds:02d}\nYou can close this window now.")
             
         except ValueError:
-            messagebox.showerror("Invalid Input", "Please enter a valid number")
-    
-    def countdown(self):
-        while self.is_running and self.remaining_time > 0:
-            mins, secs = divmod(self.remaining_time, 60)
-            self.status_label.config(text=f"Locking in: {mins:02d}:{secs:02d}", fg="blue")
-            time.sleep(1)
-            self.remaining_time -= 1
-        
-        if self.is_running and self.remaining_time == 0:
-            self.lock_screen()
-            self.reset_ui()
-    
-    def stop_timer(self):
-        self.is_running = False
-        self.reset_ui()
-    
-    def reset_ui(self):
-        self.start_button.config(state=tk.NORMAL)
-        self.stop_button.config(state=tk.DISABLED)
-        self.time_entry.config(state=tk.NORMAL)
-        self.status_label.config(text="Timer not started", fg="gray")
-        self.remaining_time = 0
-    
-    def lock_screen(self):
-        # Lock the Windows screen
-        ctypes.windll.user32.LockWorkStation()
+            messagebox.showerror("Invalid Input", "Please enter valid numbers")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to start timer: {str(e)}")
 
 def main():
     root = tk.Tk()
