@@ -1,81 +1,61 @@
-# 🔒 Screen Locker
+# Screen Locker 🔒
 
-A minimal, sleek Windows application that automatically locks your screen after a specified time.
+Ever needed to step away from your computer but wanted it to lock automatically after a few minutes? This simple app does exactly that.
 
-## ✨ Features
+## What it does
 
-- **Pure Dark Theme** - Minimal black UI design
-- **Two-Digit Time Format** - Professional HH:MM:SS display
-- **Background Process** - Timer continues even after closing the window
-- **Detached Execution** - Runs independently from the main application
-- **Compact Design** - Small, efficient interface (380x280)
+Set a timer (hours, minutes, seconds), hit Start, and your Windows screen will lock when time's up. You can even close the app after starting the timer - it keeps running in the background.
 
-## 📦 Installation
+## Quick Start
 
-Install required packages:
-```bash
-pip install -r requirements.txt
-```
+### Option 1: Use the standalone executable (easiest)
+1. Download `ScreenLocker.exe` from the releases
+2. Double-click and run
+3. No installation needed!
 
-Or use the batch file:
-```bash
-install.bat
-```
+### Option 2: Run from source
+1. Install dependencies: `pip install -r requirements.txt`
+2. Run: `python src/screen_locker_modern.py`
 
-## 🚀 Usage
+### Option 3: Build your own executable
+1. Install dependencies: `pip install -r requirements.txt`
+2. Run: `python build_exe.py` or just double-click `build.bat`
+3. Find your exe in the `dist` folder
 
-Run the application:
-```bash
-python run.py
-```
+## How to use
 
-## 🎨 Design
+1. Open the app
+2. Set your timer (default is 5 minutes)
+3. Click "Start"
+4. Close the window if you want - timer keeps running
+5. Your screen locks automatically when time's up
 
-- **Pure Black Background** - True dark theme (#0a0a0a)
-- **Minimal Interface** - No unnecessary elements
-- **CustomTkinter** - Modern, native-looking widgets
-- **Compact Layout** - Efficient use of space
-- **Two-Digit Inputs** - Auto-formatting time fields
+That's it. Simple.
 
-## 📁 Project Structure
+## Why I made this
 
-```
-ScreenLock/
-├── src/
-│   └── screen_locker_modern.py  # Main application
-├── lock_timer.py                # Background timer process
-├── run.py                       # Application launcher
-├── install.bat                  # Windows installer
-├── requirements.txt             # Dependencies
-└── README.md                    # Documentation
-```
+Sometimes you need to lock your screen after a delay - maybe you're downloading something, or waiting for a process to finish. Windows doesn't have a built-in timer for this, so here we are.
 
-## 🔧 How It Works
+## Technical stuff
 
-1. Set hours, minutes, and seconds (two-digit format)
-2. Click "Start" to begin the timer
-3. A detached background process is created
-4. Close the window anytime - timer keeps running
-5. Screen locks automatically when time expires
+- Pure dark theme that's easy on the eyes
+- Minimal design - no clutter
+- Runs in the background after you start it
+- Uses Windows' native lock function
+- Built with Python and CustomTkinter
 
-## 💡 Technical Details
+## Requirements
 
-- Uses Windows API (`LockWorkStation`) for screen locking
-- Detached subprocess ensures timer survives app closure
-- CustomTkinter provides modern UI components
-- Auto-formatting inputs to two-digit format
-- Input validation and error handling
+- Windows (uses Windows lock API)
+- Python 3.7+ (if running from source)
 
-## 🎯 Requirements
+## Files
 
-- Python 3.7+
-- Windows OS
-- customtkinter 5.2.1+
-- Pillow 10.1.0+
+- `src/screen_locker_modern.py` - Main app
+- `lock_timer.py` - Background timer
+- `build_exe.py` - Creates standalone executable
+- `build.bat` - Easy build script for Windows
 
-## 📝 Notes
+## Notes
 
-- Timer runs independently in the background
-- Safe to close the main window after starting
-- Screen locks even if application is closed
-- Fully detached operation
+The timer runs independently once started. Even if you close the app or it crashes, your screen will still lock at the scheduled time. This is by design - it's a feature, not a bug.

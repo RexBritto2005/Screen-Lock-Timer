@@ -2,147 +2,87 @@ import customtkinter as ctk
 import subprocess
 import sys
 import os
+import tempfile
 from pathlib import Path
 
 ctk.set_appearance_mode("dark")
-ctk.set_default_color_theme("blue")
+
+# Embedded lock timer script
+LOCK_TIMER_SCRIPT = """import sys
+import time
+import ctypes
+
+if __name__ == "__main__":
+    total_seconds = int(sys.argv[1])
+    time.sleep(total_seconds)
+    ctypes.windll.user32.LockWorkStation()
+"""
 
 class ModernScreenLocker(ctk.CTk):
+    # Color constants
+    BG_COLOR = "#0a0a0a"
+    INPUT_BG = "#1a1a1a"
+    ACCENT = "#ffffff"
+    ACCENT_DIM = "#666666"
+    TEXT = "#e0e0e0"
+    
     def __init__(self):
         super().__init__()
-        
-        # Window configuration
         self.title("")
         self.geometry("380x280")
         self.resizable(False, False)
-        
-        # Pure dark minimal color scheme
-        self.bg_color = "#0a0a0a"
-        self.card_bg = "#121212"
-        self.input_bg = "#1a1a1a"
-        self.accent_color = "#ffffff"
-        self.accent_dim = "#666666"
-        self.text_color = "#e0e0e0"
-        
-        self.configure(fg_color=self.bg_color)
+        self.configure(fg_color=self.BG_COLOR)
         
         self.setup_ui()
-        
-        # Center window
         self.center_window()
     
     def center_window(self):
         self.update_idletasks()
-        width = self.winfo_width()
-        height = self.winfo_height()
-        x = (self.winfo_screenwidth() // 2) - (width // 2)
-        y = (self.winfo_screenheight() // 2) - (height // 2)
-        self.geometry(f'{width}x{height}+{x}+{y}')
+        x = (self.winfo_screenwidth() - self.winfo_width()) // 2
+        y = (self.winfo_screenheight() - self.winfo_height()) // 2
+        self.geometry(f'+{x}+{y}')
     
     def setup_ui(self):
-        # Main container
-        main_frame = ctk.CTkFrame(self, fg_color=self.bg_color)
+        main_frame = ctk.CTkFrame(self, fg_color=self.BG_COLOR)
         main_frame.pack(fill="both", expand=True, padx=25, pady=20)
         
-        # Title - minimal
-        title_label = ctk.CTkLabel(
-            main_frame,
-            text="Lock Timer",
-            font=ctk.CTkFont(size=18, weight="normal"),
-            text_color=self.text_color
-        )
-        title_label.pack(pady=(0, 20))
+        ctk.CTkLabel(main_frame, text="Lock Timer", font=ctk.CTkFont(size=18), 
+                     text_color=self.TEXT).pack(pady=(0, 20))
         
-        # Time inputs container
-        inputs_container = ctk.CTkFrame(main_frame, fg_color="transparent")
-        inputs_container.pack(pady=10)
+        inputs = ctk.CTkFrame(main_frame, fg_color="transparent")
+        inputs.pack(pady=10)
         
-        # Hours
         self.hours_var = ctk.StringVar(value="00")
-        self.create_time_input(inputs_container, "Hours", self.hours_var, 0)
-        
-        # Separator
-        sep1 = ctk.CTkLabel(
-            inputs_container,
-            text=":",
-            font=ctk.CTkFont(size=24),
-            text_color=self.accent_dim
-        )
-        sep1.grid(row=0, column=1, padx=5)
-        
-        # Minutes
         self.minutes_var = ctk.StringVar(value="05")
-        self.create_time_input(inputs_container, "Minutes", self.minutes_var, 2)
-        
-        # Separator
-        sep2 = ctk.CTkLabel(
-            inputs_container,
-            text=":",
-            font=ctk.CTkFont(size=24),
-            text_color=self.accent_dim
-        )
-        sep2.grid(row=0, column=3, padx=5)
-        
-        # Seconds
         self.seconds_var = ctk.StringVar(value="00")
-        self.create_time_input(inputs_container, "Seconds", self.seconds_var, 4)
         
-        # Status label - minimal
-        self.status_label = ctk.CTkLabel(
-            main_frame,
-            text="",
-            font=ctk.CTkFont(size=11),
-            text_color=self.accent_dim
-        )
+        for i, (label, var) in enumerate([("Hours", self.hours_var), ("Minutes", self.minutes_var), ("Seconds", self.seconds_var)]):
+            self.create_time_input(inputs, label, var, i * 2)
+            if i < 2:
+                ctk.CTkLabel(inputs, text=":", font=ctk.CTkFont(size=24), 
+                           text_color=self.ACCENT_DIM).grid(row=0, column=i * 2 + 1, padx=5)
+        
+        self.status_label = ctk.CTkLabel(main_frame, text="", font=ctk.CTkFont(size=11), 
+                                         text_color=self.ACCENT_DIM)
         self.status_label.pack(pady=15)
         
-        # Start button - minimal
-        self.start_button = ctk.CTkButton(
-            main_frame,
-            text="Start",
-            command=self.start_timer,
-            font=ctk.CTkFont(size=13),
-            fg_color=self.accent_color,
-            hover_color=self.accent_dim,
-            text_color=self.bg_color,
-            height=40,
-            width=180,
-            corner_radius=4,
-            border_width=0
-        )
-        self.start_button.pack(pady=5)
+        ctk.CTkButton(main_frame, text="Start", command=self.start_timer, font=ctk.CTkFont(size=13),
+                     fg_color=self.ACCENT, hover_color=self.ACCENT_DIM, text_color=self.BG_COLOR,
+                     height=40, width=180, corner_radius=4, border_width=0).pack(pady=5)
     
     def create_time_input(self, parent, label_text, variable, column):
         container = ctk.CTkFrame(parent, fg_color="transparent")
         container.grid(row=0, column=column)
         
-        # Entry with validation
-        entry = ctk.CTkEntry(
-            container,
-            textvariable=variable,
-            width=55,
-            height=55,
-            font=ctk.CTkFont(size=28),
-            fg_color=self.input_bg,
-            border_color=self.input_bg,
-            border_width=0,
-            justify="center",
-            text_color=self.text_color
-        )
+        entry = ctk.CTkEntry(container, textvariable=variable, width=55, height=55,
+                            font=ctk.CTkFont(size=28), fg_color=self.INPUT_BG,
+                            border_width=0, justify="center", text_color=self.TEXT)
         entry.pack()
-        
-        # Bind to format as two digits
         entry.bind("<FocusOut>", lambda e: self.format_two_digits(variable))
         entry.bind("<KeyRelease>", lambda e: self.limit_input(variable, entry))
         
-        # Label below
-        label = ctk.CTkLabel(
-            container,
-            text=label_text,
-            font=ctk.CTkFont(size=10),
-            text_color=self.accent_dim
-        )
-        label.pack(pady=(4, 0))
+        ctk.CTkLabel(container, text=label_text, font=ctk.CTkFont(size=10),
+                    text_color=self.ACCENT_DIM).pack(pady=(4, 0))
     
     def format_two_digits(self, var):
         try:
@@ -173,15 +113,17 @@ class ModernScreenLocker(ctk.CTk):
                 self.show_message("Invalid Input", "Please enter a time greater than 0", error=True)
                 return
             
-            # Get the path to lock_timer.py
-            script_dir = Path(__file__).parent.parent
-            lock_timer_path = script_dir / "lock_timer.py"
+            # Create temporary lock timer script
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+                f.write(LOCK_TIMER_SCRIPT)
+                temp_script = f.name
             
             # Start detached process
             DETACHED_PROCESS = 0x00000008
+            CREATE_NO_WINDOW = 0x08000000
             subprocess.Popen(
-                [sys.executable, str(lock_timer_path), str(total_seconds)],
-                creationflags=DETACHED_PROCESS,
+                [sys.executable, temp_script, str(total_seconds)],
+                creationflags=DETACHED_PROCESS | CREATE_NO_WINDOW,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 stdin=subprocess.DEVNULL
@@ -189,7 +131,7 @@ class ModernScreenLocker(ctk.CTk):
             
             self.status_label.configure(
                 text=f"Timer started · {hours:02d}:{minutes:02d}:{seconds:02d}",
-                text_color=self.text_color
+                text_color=self.TEXT
             )
             self.show_message(
                 "Timer Started",
@@ -206,36 +148,16 @@ class ModernScreenLocker(ctk.CTk):
         dialog.title("")
         dialog.geometry("350x200")
         dialog.resizable(False, False)
-        dialog.configure(fg_color=self.bg_color)
-        
-        # Center dialog
+        dialog.configure(fg_color=self.BG_COLOR)
         dialog.transient(self)
         dialog.grab_set()
         
-        # Message
-        msg_label = ctk.CTkLabel(
-            dialog,
-            text=message,
-            font=ctk.CTkFont(size=13),
-            wraplength=300,
-            text_color=self.text_color
-        )
-        msg_label.pack(pady=50, padx=30)
+        ctk.CTkLabel(dialog, text=message, font=ctk.CTkFont(size=13), wraplength=300,
+                    text_color=self.TEXT).pack(pady=50, padx=30)
         
-        # OK button
-        ok_button = ctk.CTkButton(
-            dialog,
-            text="OK",
-            command=dialog.destroy,
-            font=ctk.CTkFont(size=13),
-            fg_color=self.accent_color,
-            hover_color=self.accent_dim,
-            text_color=self.bg_color,
-            width=120,
-            height=38,
-            corner_radius=4
-        )
-        ok_button.pack(pady=10)
+        ctk.CTkButton(dialog, text="OK", command=dialog.destroy, font=ctk.CTkFont(size=13),
+                     fg_color=self.ACCENT, hover_color=self.ACCENT_DIM, text_color=self.BG_COLOR,
+                     width=120, height=38, corner_radius=4).pack(pady=10)
 
 def main():
     app = ModernScreenLocker()

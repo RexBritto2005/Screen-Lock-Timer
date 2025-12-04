@@ -47,5 +47,4 @@ venv.bak/
 htmlcov/
 
 # Distribution
-*.exe
 *.spec
