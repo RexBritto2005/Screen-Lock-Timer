@@ -5,14 +5,14 @@ Run: python build_exe.py
 import PyInstaller.__main__
 import shutil
 from pathlib import Path
-import warnings
-
-warnings.filterwarnings('ignore')
 
 # Clean previous builds
 for folder in ['build', 'dist']:
     if Path(folder).exists():
         shutil.rmtree(folder)
+
+print("Building ScreenLocker.exe...")
+print("This may take a few minutes...\n")
 
 # Build executable
 PyInstaller.__main__.run([
@@ -21,10 +21,6 @@ PyInstaller.__main__.run([
     '--onefile',
     '--windowed',
     '--noconsole',
-    '--hidden-import=customtkinter',
-    '--hidden-import=PIL._tkinter_finder',
-    '--collect-all=customtkinter',
-    '--clean',
     '--noconfirm',
 ])
 
