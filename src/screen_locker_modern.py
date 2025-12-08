@@ -20,12 +20,15 @@ class ModernScreenLocker(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("")
-        self.geometry("420x480")
+        self.geometry("420x560")
         self.resizable(False, False)
         self.configure(fg_color=self.BG_COLOR)
         
+        self.is_24hr_format = True  # Default to 24-hour format
+        
         self.setup_ui()
         self.center_window()
+        self.update_current_time()
     
     def center_window(self):
         self.update_idletasks()
@@ -39,7 +42,12 @@ class ModernScreenLocker(ctk.CTk):
         
         # Title
         ctk.CTkLabel(main_frame, text="Screen Locker", font=ctk.CTkFont(size=18), 
-                     text_color=self.TEXT).pack(pady=(0, 15))
+                     text_color=self.TEXT).pack(pady=(0, 10))
+        
+        # Current time display
+        self.current_time_label = ctk.CTkLabel(main_frame, text="", font=ctk.CTkFont(size=14), 
+                                               text_color=self.ACCENT_DIM)
+        self.current_time_label.pack(pady=(0, 10))
         
         # Toggle switch frame
         toggle_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
@@ -201,9 +209,26 @@ class ModernScreenLocker(ctk.CTk):
         ctk.CTkLabel(minute_container, text="Minute", font=ctk.CTkFont(size=10),
                     text_color=self.ACCENT_DIM).pack(pady=(4, 0))
         
-        # Info text
-        ctk.CTkLabel(self.specific_time_frame, text="24-hour format (e.g., 14:30 for 2:30 PM)", 
-                    font=ctk.CTkFont(size=10), text_color=self.ACCENT_DIM).pack(pady=10)
+        # Time format toggle
+        format_frame = ctk.CTkFrame(self.specific_time_frame, fg_color="transparent")
+        format_frame.pack(pady=10)
+        
+        self.format_label = ctk.CTkLabel(format_frame, text="24-hour", font=ctk.CTkFont(size=11), 
+                                         text_color=self.ACCENT_DIM)
+        self.format_label.pack(side="left", padx=5)
+        
+        self.format_switch = ctk.CTkSwitch(
+            format_frame, 
+            text="",
+            command=self.toggle_time_format,
+            fg_color=self.INPUT_BG,
+            progress_color=self.ACCENT,
+            button_color=self.ACCENT,
+            button_hover_color=self.ACCENT_DIM,
+            width=40,
+            height=20
+        )
+        self.format_switch.pack(side="left")
         
         # Start button
         ctk.CTkButton(self.specific_time_frame, text="Start", command=self.lock_at_time, 
@@ -297,6 +322,25 @@ class ModernScreenLocker(ctk.CTk):
         except ValueError:
             variable.set("00")
     
+    def toggle_time_format(self):
+        self.is_24hr_format = not self.format_switch.get()
+        if self.is_24hr_format:
+            self.format_label.configure(text="24-hour")
+        else:
+            self.format_label.configure(text="12-hour (AM/PM)")
+    
+    def update_current_time(self):
+        now = datetime.now()
+        if self.is_24hr_format:
+            time_str = now.strftime("%H:%M:%S")
+        else:
+            time_str = now.strftime("%I:%M:%S %p")
+        
+        self.current_time_label.configure(text=f"Current Time: {time_str}")
+        
+        # Update every second
+        self.after(1000, self.update_current_time)
+    
     def limit_hour_input(self, var, entry):
         value = var.get()
         if len(value) > 2:
@@ -326,9 +370,15 @@ class ModernScreenLocker(ctk.CTk):
             target_hours = int(self.lock_hour_var.get() or 0)
             target_mins = int(self.lock_minute_var.get() or 0)
             
-            if target_hours < 0 or target_hours > 23:
-                self.show_message("Invalid Input", "Hour must be between 0 and 23", error=True)
-                return
+            # Validate based on format
+            if self.is_24hr_format:
+                if target_hours < 0 or target_hours > 23:
+                    self.show_message("Invalid Input", "Hour must be between 0 and 23", error=True)
+                    return
+            else:
+                if target_hours < 1 or target_hours > 12:
+                    self.show_message("Invalid Input", "Hour must be between 1 and 12", error=True)
+                    return
             
             if target_mins < 0 or target_mins > 59:
                 self.show_message("Invalid Input", "Minute must be between 0 and 59", error=True)
@@ -358,10 +408,9 @@ class ModernScreenLocker(ctk.CTk):
                 text=f"Will lock at {target_hours:02d}:{target_mins:02d} {day_text}",
                 text_color=self.TEXT
             )
-            self.show_message(
-                "Lock Scheduled",
-                f"Screen will lock at {target_hours:02d}:{target_mins:02d} {day_text}\n\nYou can close this window."
-            )
+            
+            # Auto-close immediately
+            self.after(100, self.destroy)
             
         except ValueError:
             self.show_message("Invalid Input", "Please enter valid time", error=True)
@@ -401,10 +450,9 @@ class ModernScreenLocker(ctk.CTk):
                 text=f"Timer started · {hours:02d}:{minutes:02d}:{seconds:02d}",
                 text_color=self.TEXT
             )
-            self.show_message(
-                "Timer Started",
-                f"Screen will lock in {hours:02d}:{minutes:02d}:{seconds:02d}\n\nYou can close this window."
-            )
+            
+            # Auto-close immediately
+            self.after(100, self.destroy)
             
         except ValueError:
             self.show_message("Invalid Input", "Please enter valid numbers", error=True)
